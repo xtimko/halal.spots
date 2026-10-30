@@ -144,6 +144,8 @@
   .tag.sea { background: var(--sea); }
   .tag.warn { background: var(--warn); }
   .tag.approx { background: var(--muted); }
+  .tag.halal { background: var(--open); }
+  .hl { color: var(--open); font-weight: 600; font-size: 12px; margin-left: 4px; }
   .c-rows { margin-top: 10px; display: grid; gap: 4px; font-size: 14px; }
   .c-rows .m { color: var(--muted); }
   .stars { position: relative; display: inline-block; color: var(--line); letter-spacing: 1px; }
@@ -240,7 +242,7 @@
 
 <script src="https://api-maps.yandex.ru/2.1/?apikey=ef6d8421-7a4d-47d4-8228-651e500180df&lang=ru_RU"></script>
 <script>
-// tag: "sea" — морепродукты, "warn" — не всё меню халяль.
+// tag: "sea" — морепродукты, "warn" — не всё меню халяль; halal: true — подтверждено, что всё меню халяль.
 // approx: адрес найден по названию, но совпадение не подтверждено.
 // ll: null — место не нашлось на картах. Координаты уточняет scripts/geocode.mjs.
 const PLACES = [
@@ -274,7 +276,7 @@ const PLACES = [
   { n: 28, name: "Шеф", addr: "Кутузовский пр-т, 2/1с6", ll: [55.752079, 37.566929], hours: null, rating: 4.8 },
   { n: 29, name: "Mr. Lee", addr: "Поварская ул., 52/55с3", ll: [55.757984, 37.587296], hours: "12:00–00:00", rating: 4.8, tag: "sea" },
   { n: 30, name: "Eleven", addr: "ул. Грузинский Вал, 11с3", ll: [55.774308, 37.579014], hours: null, rating: null },
-  { n: 31, name: "Ванлав", addr: "Винницкая ул., 8к4", ll: [55.702038, 37.492419], hours: null, rating: null },
+  { n: 31, name: "Ванлав", addr: "Винницкая ул., 8к4", ll: [55.702038, 37.492419], hours: null, rating: null, halal: true },
   { n: 32, name: "Три финика", addr: "Ореховый бульвар, 55к1", ll: [55.614869, 37.750996], hours: "11:00–01:00", rating: 4.3 },
   { n: 33, name: "Meraki", addr: "Новорязанская ул., 23с2 (Депо)", ll: [55.773234, 37.661722], hours: "10:00–23:00", rating: 5.0 },
   { n: 34, name: "Барашка", addr: "ул. Петровка, 20/1", ll: [55.764230, 37.618460], hours: null, rating: 4.5 },
@@ -301,7 +303,7 @@ const PLACES = [
   { n: 55, name: "Sabz Kebab", addr: "Заречье, Каштановая ул., 12с1А", ll: [55.6880, 37.3900], hours: "11:00–22:00", rating: 5.0, geo: "Московская область, Заречье, Каштановая улица, 12с1А" },
   { n: 56, name: "Mecca Coffee", addr: "ул. Расковой, 1", ll: [55.786143, 37.570000], hours: "08:00–21:00", rating: 5.0 },
   { n: 57, name: "Ullu", addr: "Мичуринский пр-т, 22к1", ll: [55.701148, 37.503570], hours: "12:00–00:00", rating: 5.0 },
-  { n: 58, name: "SanDwich", addr: "ул. Миклухо-Маклая, 11Б", ll: [55.653198, 37.502406], hours: "с 10:00", rating: 4.4 },
+  { n: 58, name: "SanDwich", addr: "ул. Миклухо-Маклая, 11Б", ll: [55.653198, 37.502406], hours: "с 10:00", rating: 4.4, halal: true },
   { n: 59, name: "Espressobar", addr: "Трубная пл., 2 (ТЦ «Неглинная»)", ll: [55.766302, 37.622417], hours: null, rating: 4.9 },
   { n: 60, name: "AMI", addr: null, ll: null },
   { n: 61, name: "Тюрки Diner", addr: "Небесный бульвар, 1к1", ll: [55.819126, 37.426180], hours: "10:00–23:00", rating: 5.0 },
@@ -317,6 +319,14 @@ const PLACES = [
   { n: 71, name: "@ku_moscow", addr: null, ll: null },
   { n: 72, name: "J’Pan", addr: "Пятницкая ул., 6/1", ll: [55.744427, 37.627353], hours: "11:00–23:00", rating: null },
   { n: 73, name: "Namur Cafe", addr: "Ленинский пр-т, 87", ll: [55.679092, 37.533424], hours: null, rating: 4.6, approx: true },
+  { n: 74, name: "Burger Avenue", addr: null, ll: null, halal: true },
+  { n: 75, name: "Ванлав Кейк", addr: "2-я Звенигородская ул., 12с23 (ЖК Lucky)", ll: [55.7635, 37.5465], hours: "круглосуточно", rating: null, halal: true },
+  { n: 76, name: "Ванлав", addr: "1-я Тверская-Ямская ул., 11", ll: [55.7728, 37.5945], hours: "круглосуточно", rating: 5.0, halal: true },
+  { n: 77, name: "Ванлав", addr: "ул. Архитектора Щусева, 2к1 (ЖК Зиларт)", ll: [55.7035, 37.6440], hours: null, rating: null, halal: true },
+  { n: 78, name: "Ванлав", addr: "Нижняя Красносельская ул., 35с49", ll: [55.7745, 37.6795], hours: null, rating: null, halal: true },
+  { n: 79, name: "Ванлав", addr: "Нежинская ул., 5к2", ll: [55.7270, 37.4560], hours: null, rating: null, halal: true },
+  { n: 80, name: "Ванлав", addr: "Боровское ш., 2к5 (ЖК Мещерский лес)", ll: [55.6600, 37.4250], hours: null, rating: null, halal: true },
+  { n: 81, name: "Ванлав", addr: "Красногорск, ул. Липовой Рощи, 5к4 (ЖК Спутник)", ll: [55.7930, 37.3780], hours: null, rating: null, halal: true, geo: "Московская область, Красногорск, улица Липовой Рощи, 5к4" },
 ];
 
 const TAGS = { sea: "морепродукты", warn: "не всё халяль" };
@@ -407,7 +417,7 @@ function render() {
       ? [statusText(p), p.hours && esc(p.hours), me && fmtDist(distKm(p.ll)), !me || !filters.has("near") ? esc(strip(p.addr)) : ""].filter(Boolean).join(" · ")
       : `не нашёл на картах · <a href="${yaSearch(p)}" target="_blank" rel="noopener">искать</a>`;
     li.innerHTML = `<span class="dot ${p.ll ? p.tag || "" : "none"}"></span>
-      <div class="li-main"><div class="li-name">${esc(p.name)}</div><div class="li-sub">${sub}</div></div>
+      <div class="li-main"><div class="li-name">${esc(p.name)}${p.halal ? `<span class="hl">✓ халяль</span>` : ""}</div><div class="li-sub">${sub}</div></div>
       ${p.rating ? `<div class="li-rate"><span class="s">★</span> ${p.rating.toFixed(1)}</div>` : ""}`;
     if (p.ll) li.addEventListener("click", () => select(p, true));
     ul.appendChild(li);
@@ -423,7 +433,7 @@ function plural(n, one, few, many) {
 // ---------- Карточка ----------
 function showCard(p) {
   const card = $("#card");
-  const tags = [p.tag && `<span class="tag ${p.tag}">${TAGS[p.tag]}</span>`, p.approx && `<span class="tag approx">адрес примерный</span>`].filter(Boolean).join("");
+  const tags = [p.halal && `<span class="tag halal">✓ полностью халяль</span>`, p.tag && `<span class="tag ${p.tag}">${TAGS[p.tag]}</span>`, p.approx && `<span class="tag approx">адрес примерный</span>`].filter(Boolean).join("");
   const route = `https://yandex.ru/maps/?rtext=~${p.ll[0]},${p.ll[1]}&rtt=auto`;
   card.innerHTML = `
     <div class="c-top"><div class="c-name">${esc(p.name)}</div><button class="c-close" type="button" aria-label="Закрыть">✕</button></div>
