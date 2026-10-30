@@ -58,8 +58,9 @@ async function nominatim(q) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const r = (await res.json())[0];
     if (!r) continue;
-    const house = ["building", "house", "place"].includes(r.category) || ["house", "building", "yes"].includes(r.type);
-    return { ll: [Number(r.lat), Number(r.lon)], exact: house, text: `${r.category}/${r.type}${t === tries[0] ? "" : " (осн. дом)"} | ${r.display_name}` };
+    // здание или заведение по точному адресу; улица/площадь целиком — не годится
+    const exact = !["highway", "boundary", "landuse", "railway"].includes(r.category) && !(r.category === "place" && r.type !== "house");
+    return { ll: [Number(r.lat), Number(r.lon)], exact, text: `${r.category}/${r.type}${t === tries[0] ? "" : " (осн. дом)"} | ${r.display_name}` };
   }
   return null;
 }
