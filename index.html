@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Halal Spots Москва</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   :root {
     --bg: #ffffff;
@@ -53,11 +52,13 @@
   .stars i { position: absolute; left: 0; top: 0; overflow: hidden; color: var(--star); font-style: normal; }
   .stars i::before { content: "★★★★★"; }
   .rating { white-space: nowrap; font-size: 12px; color: var(--muted); }
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip, .leaflet-tooltip { background: var(--bg); color: var(--fg); }
-  .leaflet-popup-content { margin: 12px 14px; font-size: 13px; }
+  /* балун Яндекса всегда светлый, поэтому цвета внутри него фиксированные */
+  .pop { color: #1d1d1f; font-size: 13px; line-height: 1.45; }
+  .pop .rating { color: #6e6e73; }
+  .pop .stars { color: #e5e5ea; }
   .pop-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
   .pop-links { margin-top: 6px; }
-  .pop-links a { color: var(--accent); margin-right: 10px; text-decoration: none; }
+  .pop-links a { color: #0a7d5a; margin-right: 10px; text-decoration: none; }
   .note { color: var(--warn); font-size: 12px; margin-top: 4px; }
   #toggle { display: none; }
 
@@ -82,11 +83,12 @@
   <div id="map"></div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://api-maps.yandex.ru/2.1/?apikey=ef6d8421-7a4d-47d4-8228-651e500180df&lang=ru_RU"></script>
 <script>
 // tag: "sea" — морепродукты, "warn" — не всё меню халяль.
 // approx: адрес найден по названию, но совпадение не подтверждено.
 // ll: null — место не нашлось на картах.
+// ll — примерные координаты; точные берутся геокодером Яндекса по адресу (geo — свой запрос, false — не уточнять).
 const PLACES = [
   { n: 1,  name: "JNKL", addr: "ул. Усачёва, 15А", ll: [55.7298, 37.5714], hours: "12:00–23:00", rating: 4.0 },
   { n: 2,  name: "Date", addr: "Хавская ул., 9", ll: [55.7188, 37.6110], hours: "09:00–22:00", rating: 5.0 },
@@ -126,9 +128,9 @@ const PLACES = [
   { n: 36, name: "Amore Море", addr: "ул. Кржижановского, 22с1", ll: [55.6795, 37.5700], hours: null, rating: 4.8 },
   { n: 37, name: "Токио", addr: "ул. Большая Никитская, 22/2", ll: [55.7568, 37.6000], hours: null, rating: 4.8 },
   { n: 38, name: "Тануки", addr: "пр-т Мира, 120 (сеть)", ll: [55.8070, 37.6380], hours: null, rating: null },
-  { n: 39, name: "The Rink", addr: "Сколково, Новая ул., 100", ll: [55.6960, 37.3560], hours: null, rating: 4.5, tag: "sea" },
+  { n: 39, name: "The Rink", addr: "Сколково, Новая ул., 100", ll: [55.6960, 37.3560], hours: null, rating: 4.5, tag: "sea", geo: "Московская область, Сколково, Новая улица, 100" },
   { n: 40, name: "Remy Kitchen Bakery", addr: "ул. Новый Арбат, 28 (сеть)", ll: [55.7533, 37.5858], hours: "с 08:00", rating: null, tag: "sea" },
-  { n: 41, name: "HFC", addr: "Химки, Библиотечная ул., 22", ll: [55.8905, 37.4430], hours: null, rating: 4.2 },
+  { n: 41, name: "HFC", addr: "Химки, Библиотечная ул., 22", ll: [55.8905, 37.4430], hours: null, rating: 4.2, geo: "Московская область, Химки, Библиотечная улица, 22" },
   { n: 42, name: "Conversation", addr: "ул. Большая Никитская, 23/14/9", ll: [55.7572, 37.6022], hours: null, rating: 4.8 },
   { n: 43, name: "Bruno", addr: "Неглинная ул., 14с1А", ll: [55.7630, 37.6215], hours: "12:00–00:00", rating: 4.9, tag: "warn" },
   { n: 44, name: "Чаошань", addr: "Ленинский пр-т, 123Г", ll: [55.6330, 37.4800], hours: "11:00–00:00", rating: 4.7 },
@@ -142,11 +144,11 @@ const PLACES = [
   { n: 52, name: "Chicolatte Lab", addr: "ул. Малое Понизовье, 2 (Саларьево парк)", ll: [55.6190, 37.4200], hours: null, rating: null },
   { n: 53, name: "Bazzap", addr: "Севастопольский пр-т, 15к1", ll: [55.6830, 37.5890], hours: null, rating: 4.7 },
   { n: 54, name: "Kulēk", addr: "Камергерский пер., 6с1", ll: [55.7610, 37.6125], hours: "12:00–00:00", rating: 4.9, tag: "sea" },
-  { n: 55, name: "Sabz Kebab", addr: "Заречье, Каштановая ул., 12с1А", ll: [55.6880, 37.3900], hours: "11:00–22:00", rating: 5.0 },
+  { n: 55, name: "Sabz Kebab", addr: "Заречье, Каштановая ул., 12с1А", ll: [55.6880, 37.3900], hours: "11:00–22:00", rating: 5.0, geo: "Московская область, Заречье, Каштановая улица, 12с1А" },
   { n: 56, name: "Mecca Coffee", addr: "ул. Расковой, 1", ll: [55.7880, 37.5785], hours: "08:00–21:00", rating: 5.0 },
   { n: 57, name: "Ullu", addr: "Мичуринский пр-т, 22к1", ll: [55.6955, 37.4965], hours: "12:00–00:00", rating: 5.0 },
   { n: 58, name: "SanDwich", addr: "ул. Миклухо-Маклая, 11Б", ll: [55.6510, 37.5040], hours: "с 10:00", rating: 4.4 },
-  { n: 59, name: "Espresso Lab", addr: "Калужское ш., 21-й км (Коммунарка)", ll: [55.5800, 37.4730], hours: null, rating: null, approx: true },
+  { n: 59, name: "Espresso Lab", addr: "Калужское ш., 21-й км (Коммунарка)", ll: [55.5800, 37.4730], hours: null, rating: null, approx: true, geo: false },
   { n: 60, name: "AMI", addr: null, ll: null },
   { n: 61, name: "Тюрки Diner", addr: "Небесный бульвар, 1к1", ll: [55.8180, 37.4400], hours: "10:00–23:00", rating: 5.0 },
   { n: 62, name: "Olymp Junior", addr: "ул. Лужники, 24с19а", ll: [55.7180, 37.5600], hours: "10:00–00:00", rating: 4.6 },
@@ -165,6 +167,7 @@ const PLACES = [
 
 const TAGS = { sea: "морепрод", warn: "не всё халяль" };
 const COLORS = { sea: "#1f6fd1", warn: "#d9822b" };
+const GEO_CACHE = "halal-spots:geo:v1:";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -184,7 +187,7 @@ function query(p) {
 
 function popup(p) {
   const q = query(p);
-  return `<div class="pop-name">${esc(p.name)}${tag(p)}</div>
+  return `<div class="pop"><div class="pop-name">${esc(p.name)}${tag(p)}</div>
     <div>${esc(p.addr)}</div>
     <div>🕒 ${p.hours ? esc(p.hours) : "часы уточнить"}</div>
     <div>${stars(p.rating)}</div>
@@ -192,30 +195,70 @@ function popup(p) {
     <div class="pop-links">
       <a href="https://yandex.ru/maps/213/moscow/?text=${q}" target="_blank" rel="noopener">Яндекс Карты</a>
       <a href="https://2gis.ru/moscow/search/${q}" target="_blank" rel="noopener">2ГИС</a>
-    </div>`;
+    </div></div>`;
 }
 
-const map = L.map("map", { zoomControl: true }).setView([55.745, 37.58], 11);
-map.attributionControl.setPrefix(false);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-  maxZoom: 19,
-  subdomains: "abcd",
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-}).addTo(map);
-
-const markers = new Map();
-for (const p of PLACES) {
-  if (!p.ll) continue;
-  const m = L.circleMarker(p.ll, {
-    radius: 8,
-    weight: 2,
-    color: "#fff",
-    fillColor: COLORS[p.tag] || "#0a7d5a",
-    fillOpacity: p.approx ? 0.5 : 0.95,
-  }).bindPopup(popup(p)).bindTooltip(p.name, { direction: "top", offset: [0, -6] });
-  m.addTo(map);
-  markers.set(p.n, m);
+function cacheGet(k) {
+  try { return JSON.parse(localStorage.getItem(GEO_CACHE + k)); } catch { return null; }
 }
+function cacheSet(k, v) {
+  try { localStorage.setItem(GEO_CACHE + k, JSON.stringify(v)); } catch {}
+}
+
+// Геокодер иногда находит одноимённую улицу в другом месте — такие ответы отбрасываем.
+function nearby(a, b) {
+  return Math.hypot((a[0] - b[0]) * 111, (a[1] - b[1]) * 63) < 8;
+}
+
+// Несколько мест в одном доме раздвигаем, чтобы метки не накрывали друг друга.
+const taken = new Map();
+
+async function refine(p, mark) {
+  if (p.geo === false) return;
+  const q = p.geo || "Москва, " + p.addr.replace(/\s*\(.*\)$/, "");
+  let ll = cacheGet(q);
+  if (ll === null) {
+    try {
+      const obj = (await ymaps.geocode(q, { results: 1 })).geoObjects.get(0);
+      const found = obj && obj.geometry.getCoordinates();
+      ll = found && nearby(found, p.ll) ? found : false;
+      cacheSet(q, ll);
+    } catch { return; }
+  }
+  if (!ll) return;
+  const key = ll.join();
+  const dup = taken.get(key) || 0;
+  taken.set(key, dup + 1);
+  mark.geometry.setCoordinates([ll[0], ll[1] + dup * 0.0002]);
+}
+
+let map;
+const marks = new Map();
+
+ymaps.ready(async () => {
+  map = new ymaps.Map("map", {
+    center: [55.745, 37.58],
+    zoom: 11,
+    controls: ["zoomControl", "geolocationControl"],
+  }, { suppressMapOpenBlock: true });
+
+  for (const p of PLACES) {
+    if (!p.ll) continue;
+    const mark = new ymaps.Placemark(p.ll, {
+      balloonContent: popup(p),
+      hintContent: p.name,
+    }, {
+      preset: "islands#circleDotIcon",
+      iconColor: COLORS[p.tag] || "#0a7d5a",
+      opacity: p.approx ? 0.6 : 1,
+    });
+    map.geoObjects.add(mark);
+    marks.set(p.n, mark);
+  }
+  for (const p of PLACES) {
+    if (marks.has(p.n)) await refine(p, marks.get(p.n));
+  }
+});
 
 const list = document.getElementById("list");
 const panel = document.getElementById("panel");
@@ -237,9 +280,10 @@ function render(filter) {
         : `не нашёл на картах · <a href="https://yandex.ru/maps/213/moscow/?text=${query(p)}" target="_blank" rel="noopener">искать</a>`}</div>`;
     if (p.ll) {
       li.addEventListener("click", () => {
-        const m = markers.get(p.n);
-        map.flyTo(m.getLatLng(), 16, { duration: 0.6 });
-        m.openPopup();
+        const mark = marks.get(p.n);
+        if (!mark) return;
+        map.setCenter(mark.geometry.getCoordinates(), 16, { duration: 300 })
+          .then(() => mark.balloon.open());
         if (window.matchMedia("(max-width: 720px)").matches) panel.classList.add("collapsed");
       });
     }
