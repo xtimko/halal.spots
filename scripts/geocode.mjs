@@ -6,6 +6,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const FILE = new URL("../index.html", import.meta.url);
 const DRY = process.argv.includes("--dry");
+// Уже уточнённые координаты (6 знаков после запятой) не трогаем — Nominatim от раза к разу
+// может отвечать по-разному. Пересчитать всё заново: --all.
+const ALL = process.argv.includes("--all");
 // Геокодер иногда находит одноимённую улицу в другом городе — дальше этого не двигаем.
 const MAX_SHIFT_KM = 15;
 
@@ -69,6 +72,7 @@ let provider = key ? yandex : nominatim;
 let moved = 0, kept = 0;
 for (const p of places) {
   if (!p.ll || p.geo === false) continue;
+  if (!ALL && p.ll.every(v => /\.\d{6}$/.test(String(v)))) continue;
   const q = p.geo || "Москва, " + p.addr.replace(/\s*\(.*\)$/, "");
   let r;
   try {
