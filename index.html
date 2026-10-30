@@ -54,17 +54,17 @@
       --fg: #f5f5f7;
       --muted: rgba(235, 235, 245, .6);
       --line: rgba(235, 235, 245, .12);
-      --glass: rgba(30, 30, 32, .5);
-      --glass-strong: rgba(30, 30, 32, .74);
-      --glass-edge: rgba(255, 255, 255, .22);
-      --glass-shade: rgba(0, 0, 0, .25);
-      --shadow: 0 10px 40px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .3);
-      --press: rgba(255, 255, 255, .08);
+      --glass: rgba(20, 20, 22, .56);
+      --glass-strong: rgba(20, 20, 22, .78);
+      --glass-edge: rgba(255, 255, 255, .16);
+      --glass-shade: transparent;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 2px 10px rgba(0, 0, 0, .35);
+      --press: rgba(255, 255, 255, .09);
       --open: #30d158;
       --closed: #ff6961;
-      --rim-hi: rgba(255, 255, 255, .55);
-      --rim-mid: rgba(255, 255, 255, .28);
-      --rim-lo: rgba(255, 255, 255, .08);
+      --rim-hi: rgba(255, 255, 255, .5);
+      --rim-mid: rgba(255, 255, 255, .2);
+      --rim-lo: rgba(255, 255, 255, .06);
       --glow: rgba(48, 209, 120, .5);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -75,7 +75,7 @@
   [data-theme="dark"] body { background: #1c1c1e; }
   #map { position: fixed; inset: 0; }
   /* у JS API 2.1 нет тёмной схемы — перекрашиваем только подложку, метки остаются цветными */
-  [data-theme="dark"] #map [class*="ground-pane"] { filter: invert(1) hue-rotate(180deg) brightness(.95) contrast(.88) saturate(.75); }
+  [data-theme="dark"] #map [class*="ground-pane"] { filter: invert(.92) hue-rotate(190deg) saturate(.45) brightness(.95) contrast(.95); }
 
   /* ---------- Liquid Glass ---------- */
   .glass {
@@ -104,7 +104,19 @@
     mix-blend-mode: soft-light;
   }
   .glass.lens { background: rgba(255, 255, 255, .18); }
-  [data-theme="dark"] .glass.lens { background: rgba(30, 30, 32, .28); }
+  [data-theme="dark"] .glass.lens { background: rgba(40, 40, 44, .34); }
+  /* тёмное стекло iOS: почти чёрное, сквозь него видна карта; блик — только тонкая полоска света сверху,
+     без светлой дымки по всей площади (она и делала панели мутно-серыми) */
+  [data-theme="dark"] .glass {
+    -webkit-backdrop-filter: blur(28px) saturate(170%) brightness(.85);
+    backdrop-filter: blur(28px) saturate(170%) brightness(.85);
+  }
+  [data-theme="dark"] .glass::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .09) 0%, rgba(255, 255, 255, 0) 26%),
+                radial-gradient(80% 45% at 12% 0%, rgba(255, 255, 255, .07), transparent 60%);
+    mix-blend-mode: normal;
+  }
+  [data-theme="dark"] .chip:not(.on) { background: rgba(255, 255, 255, .07); }
   .glass > * { position: relative; }
 
   /* ---------- Панель / шторка ---------- */
