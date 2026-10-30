@@ -20,5 +20,6 @@ jobs:
           if git diff --quiet; then echo "no changes"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Update place coordinates from Yandex geocoder"
+          git commit -am "Update place coordinates from geocoder"
+          git pull --rebase origin "$GITHUB_REF_NAME"
           git push
