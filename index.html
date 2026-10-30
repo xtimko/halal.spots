@@ -49,6 +49,7 @@
     --rim-mid: rgba(255, 255, 255, .6);
     --rim-lo: rgba(255, 255, 255, .22);
     --glow: rgba(10, 125, 90, .45);
+    --fill: rgba(120, 120, 128, .12);
   }
   :root[data-theme="dark"] {
       --fg: #f5f5f7;
@@ -66,6 +67,7 @@
       --rim-mid: rgba(255, 255, 255, .2);
       --rim-lo: rgba(255, 255, 255, .06);
       --glow: rgba(48, 209, 120, .5);
+      --fill: rgba(118, 118, 128, .24);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #e9e9ee; color: var(--fg);
@@ -116,7 +118,6 @@
                 radial-gradient(80% 45% at 12% 0%, rgba(255, 255, 255, .07), transparent 60%);
     mix-blend-mode: normal;
   }
-  [data-theme="dark"] .chip:not(.on) { background: rgba(255, 255, 255, .07); }
   .glass > * { position: relative; }
 
   /* ---------- Панель / шторка ---------- */
@@ -128,23 +129,29 @@
   .head { padding: 12px 12px 8px; }
   .search {
     display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px;
-    border-radius: 22px; background: var(--press);
+    border-radius: 22px; background: var(--fill);
   }
   .search svg { flex: none; opacity: .55; }
   #q { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 16px; }
   #q::placeholder { color: var(--muted); }
   #clear { border: 0; background: none; padding: 4px; color: var(--muted); display: none; }
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 2px 2px; scrollbar-width: none; }
+  .chips {
+    display: flex; gap: 8px; overflow-x: auto; padding: 10px 24px 2px 2px; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  }
   .chips::-webkit-scrollbar { display: none; }
+  /* внутри стеклянной панели Apple не кладёт стекло на стекло: кнопки — плоские полупрозрачные капсулы */
   .chip {
-    flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 17px;
-    font-size: 14px; font-weight: 500; white-space: nowrap;
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    height: 32px; padding: 0 13px; border: 0; border-radius: 16px;
+    font-size: 14px; font-weight: 500; white-space: nowrap; background: var(--fill);
     transition: transform .15s, background .2s, color .2s;
   }
+  .chip svg { flex: none; opacity: .8; }
   .chip:active { transform: scale(.94); }
-  .chip.glass { box-shadow: inset 0 1px 0 var(--glass-edge), 0 2px 8px rgba(0, 0, 0, .08); }
-  .chip.on, [data-theme="dark"] .chip.on { background: linear-gradient(180deg, #14a374, var(--accent)); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 0 18px var(--glow), 0 4px 12px rgba(0, 0, 0, .12); }
-  .chip.on::before { opacity: .4; }
+  .chip.on { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 2px 10px var(--glow); }
+  .chip.on svg { opacity: 1; }
   .summary { display: flex; justify-content: space-between; padding: 6px 18px 6px; font-size: 13px; color: var(--muted); }
   #list { list-style: none; margin: 0; padding: 0 8px 12px; overflow-y: auto; flex: 1; overscroll-behavior: contain; }
   #list li { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 16px; cursor: pointer; }
@@ -273,11 +280,11 @@
       <button id="clear" type="button" aria-label="Очистить">✕</button>
     </label>
     <div class="chips" id="chips">
-      <button class="chip glass lens" data-f="near">📍 Рядом</button>
-      <button class="chip glass lens" data-f="open">Открыто сейчас</button>
-      <button class="chip glass lens" data-f="top">★ 4.8+</button>
-      <button class="chip glass lens" data-f="halal">Только халяль</button>
-      <button class="chip glass lens" data-f="sea">Морепродукты</button>
+      <button class="chip" data-f="near"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3 3 10.5l7.5 3L13.5 21z"/></svg>Рядом</button>
+      <button class="chip" data-f="open">Открыто сейчас</button>
+      <button class="chip" data-f="top">★ 4.8+</button>
+      <button class="chip" data-f="halal">Только халяль</button>
+      <button class="chip" data-f="sea">Морепродукты</button>
     </div>
   </div>
   <div class="summary"><span id="count"></span><span id="sort"></span></div>
@@ -741,7 +748,7 @@ render();
       const inside = -sdf(px, py, w / 2, h / 2, r);
       // у кромки «линза» тянет изображение к центру, в середине — без искажений
       const k = 1 - smooth(0, bevel, inside);
-      const dx = -px * k * .22, dy = -py * k * .22;
+      const dx = -px * k * .14, dy = -py * k * .14;
       const i = (y * w + x) * 2;
       raw[i] = dx; raw[i + 1] = dy;
       max = Math.max(max, Math.abs(dx), Math.abs(dy));
