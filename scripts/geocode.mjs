@@ -1,7 +1,7 @@
 // Уточняет координаты мест в index.html по адресам.
-// Сначала геокодер Яндекса (ключ из <script src="...apikey=..."> в index.html);
+// Сначала геокодер Яндекса (ключ из YANDEX_GEOCODER_KEY, иначе из <script src="...apikey=..."> в index.html);
 // если ключ не подходит для геокодера — Nominatim (OpenStreetMap).
-// Запуск: node scripts/geocode.mjs [--dry]
+// Запуск: YANDEX_GEOCODER_KEY=... node scripts/geocode.mjs [--dry] [--all]
 import { readFileSync, writeFileSync } from "node:fs";
 
 const FILE = new URL("../index.html", import.meta.url);
@@ -13,7 +13,7 @@ const ALL = process.argv.includes("--all");
 const MAX_SHIFT_KM = 15;
 
 let html = readFileSync(FILE, "utf8");
-const key = html.match(/api-maps\.yandex\.ru\/2\.1\/\?apikey=([\w-]+)/)?.[1];
+const key = process.env.YANDEX_GEOCODER_KEY || html.match(/api-maps\.yandex\.ru\/2\.1\/\?apikey=([\w-]+)/)?.[1];
 const block = html.match(/const PLACES = (\[[\s\S]*?\n\]);/)[1];
 const places = new Function(`return ${block}`)();
 

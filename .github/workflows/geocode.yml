@@ -2,6 +2,15 @@ name: Geocode places
 
 on:
   workflow_dispatch:
+    inputs:
+      all:
+        description: "Пересчитать все точки, а не только новые"
+        type: boolean
+        default: false
+      geocoder_key:
+        description: "Ключ HTTP Геокодера Яндекса (в репозитории не хранится)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -14,7 +23,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/geocode.mjs
+      # ключ читаем из события и сразу маскируем, чтобы он не попал в логи
+      - name: Geocoder key
+        env:
+          SECRET_KEY: ${{ secrets.YANDEX_GEOCODER_KEY }}
+        run: |
+          KEY=$(jq -r '.inputs.geocoder_key // ""' "$GITHUB_EVENT_PATH")
+          KEY=${KEY:-$SECRET_KEY}
+          if [ -n "$KEY" ]; then
+            echo "::add-mask::$KEY"
+            echo "YANDEX_GEOCODER_KEY=$KEY" >> "$GITHUB_ENV"
+          fi
+      - run: node scripts/geocode.mjs ${{ inputs.all && '--all' || '' }}
       - name: Commit coordinates
         run: |
           if git diff --quiet; then echo "no changes"; exit 0; fi
