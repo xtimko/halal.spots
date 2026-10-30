@@ -2,93 +2,247 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#f2f2f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Halal Spots Москва</title>
 <style>
   :root {
-    --bg: #ffffff;
     --fg: #1d1d1f;
-    --muted: #6e6e73;
-    --line: #e5e5ea;
+    --muted: rgba(60, 60, 67, .62);
+    --line: rgba(60, 60, 67, .14);
     --accent: #0a7d5a;
     --sea: #1f6fd1;
     --warn: #d9822b;
-    --star: #f5a623;
-    --hover: #f2f2f7;
+    --star: #ff9f0a;
+    --open: #1f9d55;
+    --closed: #d93a3a;
+    --glass: rgba(255, 255, 255, .52);
+    --glass-strong: rgba(255, 255, 255, .72);
+    --glass-edge: rgba(255, 255, 255, .7);
+    --glass-shade: rgba(0, 0, 0, .06);
+    --shadow: 0 10px 40px rgba(0, 0, 0, .16), 0 2px 8px rgba(0, 0, 0, .08);
+    --press: rgba(0, 0, 0, .05);
+    --radius: 28px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1c1c1e;
-      --fg: #f2f2f7;
-      --muted: #98989d;
-      --line: #38383a;
-      --hover: #2c2c2e;
+      --fg: #f5f5f7;
+      --muted: rgba(235, 235, 245, .6);
+      --line: rgba(235, 235, 245, .12);
+      --glass: rgba(30, 30, 32, .5);
+      --glass-strong: rgba(30, 30, 32, .74);
+      --glass-edge: rgba(255, 255, 255, .22);
+      --glass-shade: rgba(0, 0, 0, .25);
+      --shadow: 0 10px 40px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .3);
+      --press: rgba(255, 255, 255, .08);
+      --open: #30d158;
+      --closed: #ff6961;
     }
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
-    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  #app { display: flex; height: 100%; }
-  #panel { width: 340px; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--bg); z-index: 1000; }
-  #map { flex: 1; }
-  header { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
-  h1 { margin: 0 0 8px; font-size: 18px; }
-  h1 span { color: var(--muted); font-weight: 400; font-size: 14px; }
-  #q { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
-    background: var(--bg); color: var(--fg); font-size: 14px; }
-  #list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
-  #list li { padding: 9px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
-  #list li:hover { background: var(--hover); }
-  #list li.missing { cursor: default; opacity: .6; }
-  .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-  .name { font-weight: 600; }
-  .num { color: var(--muted); font-weight: 400; margin-right: 4px; }
-  .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .tag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 6px; margin-left: 4px; color: #fff; vertical-align: 1px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #e9e9ee; color: var(--fg);
+    font: 15px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  #map { position: fixed; inset: 0; }
+
+  /* ---------- Liquid Glass ---------- */
+  .glass {
+    position: relative;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(22px) saturate(185%);
+    backdrop-filter: blur(22px) saturate(185%);
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      inset 0 0 0 1px var(--glass-edge),
+      inset 0 -10px 20px var(--glass-shade),
+      var(--shadow);
+  }
+  /* блик сверху, как у стекла в iOS 26 */
+  .glass::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .45) 0%, rgba(255, 255, 255, 0) 38%),
+                radial-gradient(120% 60% at 15% 0%, rgba(255, 255, 255, .35), transparent 60%);
+    mix-blend-mode: soft-light;
+  }
+  .glass.lens { background: rgba(255, 255, 255, .18); }
+  @media (prefers-color-scheme: dark) { .glass.lens { background: rgba(30, 30, 32, .28); } }
+  .glass > * { position: relative; }
+
+  /* ---------- Панель / шторка ---------- */
+  #sheet {
+    position: fixed; z-index: 10; display: flex; flex-direction: column;
+    border-radius: var(--radius); overflow: hidden;
+  }
+  #handle { display: none; }
+  .head { padding: 12px 12px 8px; }
+  .search {
+    display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px;
+    border-radius: 22px; background: var(--press);
+  }
+  .search svg { flex: none; opacity: .55; }
+  #q { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 16px; }
+  #q::placeholder { color: var(--muted); }
+  #clear { border: 0; background: none; padding: 4px; color: var(--muted); display: none; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 2px 2px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 17px;
+    font-size: 14px; font-weight: 500; white-space: nowrap;
+    transition: transform .15s, background .2s, color .2s;
+  }
+  .chip:active { transform: scale(.94); }
+  .chip.glass { box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 0 0 1px var(--glass-edge), 0 2px 8px rgba(0, 0, 0, .08); }
+  .chip.on { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 4px 14px rgba(10, 125, 90, .35); }
+  .chip.on::before { opacity: .4; }
+  .summary { display: flex; justify-content: space-between; padding: 6px 18px 6px; font-size: 13px; color: var(--muted); }
+  #list { list-style: none; margin: 0; padding: 0 8px 12px; overflow-y: auto; flex: 1; overscroll-behavior: contain; }
+  #list li { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 16px; cursor: pointer; }
+  #list li:active, #list li.sel { background: var(--press); }
+  #list li.missing { opacity: .55; cursor: default; }
+  .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 3px rgba(10, 125, 90, .16); }
+  .dot.sea { background: var(--sea); box-shadow: 0 0 0 3px rgba(31, 111, 209, .16); }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 0 3px rgba(217, 130, 43, .16); }
+  .dot.none { background: var(--muted); box-shadow: none; }
+  .li-main { flex: 1; min-width: 0; }
+  .li-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-sub a { color: var(--accent); }
+  .li-rate { flex: none; font-size: 13px; font-weight: 600; }
+  .li-rate .s { color: var(--star); }
+  .st-open { color: var(--open); font-weight: 600; }
+  .st-closed { color: var(--closed); font-weight: 600; }
+  .empty { padding: 30px 16px; text-align: center; color: var(--muted); }
+
+  /* ---------- Кнопки карты ---------- */
+  #controls { position: fixed; z-index: 9; right: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .round {
+    width: 46px; height: 46px; border: 0; border-radius: 50%;
+    display: grid; place-items: center; font-size: 22px; font-weight: 400;
+    transition: transform .15s;
+  }
+  .round:active { transform: scale(.9); }
+  .round.on { color: var(--sea); }
+  .zoom { display: flex; flex-direction: column; border-radius: 23px; overflow: hidden; }
+  .zoom button { width: 46px; height: 44px; border: 0; background: none; font-size: 24px; }
+  .zoom button + button { border-top: 1px solid var(--line); }
+
+  /* ---------- Карточка места ---------- */
+  #card {
+    position: fixed; z-index: 11; border-radius: var(--radius); padding: 16px 16px 14px;
+    transition: transform .3s cubic-bezier(.2, .9, .3, 1.15), opacity .2s;
+  }
+  #card[hidden] { display: block; opacity: 0; pointer-events: none; transform: translateY(30px) scale(.96); }
+  .c-top { display: flex; align-items: flex-start; gap: 10px; }
+  .c-name { flex: 1; font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .c-close { flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--press); font-size: 17px; line-height: 1; color: var(--muted); }
+  .c-tags { margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+  .tag { padding: 2px 8px; border-radius: 8px; color: #fff; font-weight: 600; }
   .tag.sea { background: var(--sea); }
   .tag.warn { background: var(--warn); }
-  .stars { position: relative; display: inline-block; color: var(--line); white-space: nowrap; font-size: 13px; letter-spacing: 1px; }
+  .tag.approx { background: var(--muted); }
+  .c-rows { margin-top: 10px; display: grid; gap: 4px; font-size: 14px; }
+  .c-rows .m { color: var(--muted); }
+  .stars { position: relative; display: inline-block; color: var(--line); letter-spacing: 1px; }
   .stars::before { content: "★★★★★"; }
   .stars i { position: absolute; left: 0; top: 0; overflow: hidden; color: var(--star); font-style: normal; }
   .stars i::before { content: "★★★★★"; }
-  .rating { white-space: nowrap; font-size: 12px; color: var(--muted); }
-  /* балун Яндекса всегда светлый, поэтому цвета внутри него фиксированные */
-  .pop { color: #1d1d1f; font-size: 13px; line-height: 1.45; }
-  .pop .rating { color: #6e6e73; }
-  .pop .stars { color: #e5e5ea; }
-  .pop-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-  .pop-links { margin-top: 6px; }
-  .pop-links a { color: #0a7d5a; margin-right: 10px; text-decoration: none; }
-  .note { color: var(--warn); font-size: 12px; margin-top: 4px; }
-  #toggle { display: none; }
+  .c-actions { margin-top: 14px; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+  .btn {
+    height: 44px; border-radius: 22px; display: grid; place-items: center;
+    font-size: 14px; font-weight: 600; text-decoration: none; color: var(--fg); background: var(--press);
+    transition: transform .15s;
+  }
+  .btn:active { transform: scale(.95); }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 18px rgba(10, 125, 90, .35); }
 
-  @media (max-width: 720px) {
-    #app { flex-direction: column-reverse; }
-    #panel { width: 100%; height: 42%; border-right: 0; border-top: 1px solid var(--line); }
-    #panel.collapsed { height: auto; }
-    #panel.collapsed #list { display: none; }
-    #toggle { display: inline; float: right; border: 0; background: none; color: var(--accent); font-size: 14px; padding: 0; cursor: pointer; }
+  /* ---------- Метки ---------- */
+  .pin {
+    width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%;
+    background: var(--accent); border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35); transition: transform .2s;
+  }
+  .pin.sea { background: var(--sea); }
+  .pin.warn { background: var(--warn); }
+  .pin.approx { opacity: .55; }
+  .pin.sel { transform: scale(1.45); box-shadow: 0 0 0 6px rgba(10, 125, 90, .25), 0 4px 10px rgba(0, 0, 0, .35); }
+  .me { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: #0a84ff; border: 3px solid #fff;
+    box-shadow: 0 0 0 8px rgba(10, 132, 255, .2), 0 2px 6px rgba(0, 0, 0, .3); }
+  .cluster {
+    width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
+    display: grid; place-items: center; font: 700 14px -apple-system, BlinkMacSystemFont, sans-serif; color: #fff;
+    background: rgba(10, 125, 90, .88); border: 3px solid rgba(255, 255, 255, .9);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+  }
+
+  /* ---------- Раскладка: телефон ---------- */
+  @media (max-width: 799px) {
+    #sheet {
+      left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+      height: var(--sheet-h, 154px);
+      transition: height .32s cubic-bezier(.2, .9, .3, 1), transform .3s;
+    }
+    #sheet.dragging { transition: none; }
+    #handle { display: block; flex: none; height: 22px; touch-action: none; cursor: grab; }
+    #handle::after { content: ""; display: block; width: 38px; height: 5px; margin: 9px auto 0; border-radius: 3px; background: var(--muted); opacity: .5; }
+    .head { padding-top: 0; }
+    .summary { touch-action: none; }
+    #controls { bottom: calc(var(--sheet-h, 154px) + 22px + env(safe-area-inset-bottom)); transition: bottom .32s cubic-bezier(.2, .9, .3, 1); }
+    #card { left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); }
+    body.carded #sheet { transform: translateY(120%); }
+    body.carded #controls { bottom: calc(var(--card-h, 220px) + 22px + env(safe-area-inset-bottom)); }
+  }
+  /* ---------- Раскладка: компьютер ---------- */
+  @media (min-width: 800px) {
+    #sheet { top: 16px; left: 16px; bottom: 16px; width: 380px; }
+    #controls { bottom: 24px; }
+    #card { left: 412px; bottom: 16px; width: 380px; }
   }
 </style>
 </head>
 <body>
-<div id="app">
-  <aside id="panel">
-    <header>
-      <h1>Halal Spots <span id="count"></span><button id="toggle" type="button">Список</button></h1>
-      <input id="q" type="search" placeholder="Поиск по названию или адресу" autocomplete="off">
-    </header>
-    <ul id="list"></ul>
-  </aside>
-  <div id="map"></div>
+<div id="map"></div>
+
+<aside id="sheet" class="glass">
+  <div id="handle" aria-hidden="true"></div>
+  <div class="head">
+    <label class="search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Поиск: название или улица" autocomplete="off" enterkeyhint="search">
+      <button id="clear" type="button" aria-label="Очистить">✕</button>
+    </label>
+    <div class="chips" id="chips">
+      <button class="chip glass lens" data-f="near">📍 Рядом</button>
+      <button class="chip glass lens" data-f="open">Открыто сейчас</button>
+      <button class="chip glass lens" data-f="top">★ 4.8+</button>
+      <button class="chip glass lens" data-f="halal">Только халяль</button>
+      <button class="chip glass lens" data-f="sea">Морепродукты</button>
+    </div>
+  </div>
+  <div class="summary"><span id="count"></span><span id="sort"></span></div>
+  <ul id="list"></ul>
+</aside>
+
+<div id="controls">
+  <div class="zoom glass lens">
+    <button id="zin" type="button" aria-label="Приблизить">+</button>
+    <button id="zout" type="button" aria-label="Отдалить">−</button>
+  </div>
+  <button id="locate" class="round glass lens" type="button" aria-label="Где я">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3 3 10.5l7.5 3L13.5 21z"/></svg>
+  </button>
 </div>
+
+<section id="card" class="glass" hidden aria-live="polite"></section>
 
 <script src="https://api-maps.yandex.ru/2.1/?apikey=ef6d8421-7a4d-47d4-8228-651e500180df&lang=ru_RU"></script>
 <script>
 // tag: "sea" — морепродукты, "warn" — не всё меню халяль.
 // approx: адрес найден по названию, но совпадение не подтверждено.
-// ll: null — место не нашлось на картах.
-// ll — примерные координаты; точные берутся геокодером Яндекса по адресу (geo — свой запрос, false — не уточнять).
+// ll: null — место не нашлось на картах. Координаты уточняет scripts/geocode.mjs.
 const PLACES = [
   { n: 1,  name: "JNKL", addr: "ул. Усачёва, 15А", ll: [55.725739, 37.570090], hours: "12:00–23:00", rating: 4.0 },
   { n: 2,  name: "Date", addr: "Хавская ул., 9", ll: [55.716180, 37.613861], hours: "09:00–22:00", rating: 5.0 },
@@ -143,7 +297,7 @@ const PLACES = [
   { n: 51, name: "Naura Emirates", addr: "Никольская ул., 10", ll: [55.758021, 37.624451], hours: "с 11:00", rating: 2.3 },
   { n: 52, name: "Chicolatte Lab", addr: "ул. Малое Понизовье, 2 (Саларьево парк)", ll: [55.604166, 37.414545], hours: null, rating: null },
   { n: 53, name: "Bazzap", addr: "Севастопольский пр-т, 15к1", ll: [55.682922, 37.599824], hours: null, rating: 4.7 },
-  { n: 54, name: "Kulēk", addr: "Камергерский пер., 6с1", ll: [55.7610, 37.6125], hours: "12:00–00:00", rating: 4.9, tag: "sea" },
+  { n: 54, name: "Kulēk", addr: "ул. Покровка, 1/13/6с2", ll: [55.758569, 37.639401], hours: "12:00–00:00", rating: 4.9, tag: "sea" },
   { n: 55, name: "Sabz Kebab", addr: "Заречье, Каштановая ул., 12с1А", ll: [55.6880, 37.3900], hours: "11:00–22:00", rating: 5.0, geo: "Московская область, Заречье, Каштановая улица, 12с1А" },
   { n: 56, name: "Mecca Coffee", addr: "ул. Расковой, 1", ll: [55.786143, 37.570000], hours: "08:00–21:00", rating: 5.0 },
   { n: 57, name: "Ullu", addr: "Мичуринский пр-т, 22к1", ll: [55.701148, 37.503570], hours: "12:00–00:00", rating: 5.0 },
@@ -154,9 +308,9 @@ const PLACES = [
   { n: 62, name: "Olymp Junior", addr: "ул. Лужники, 24с19а", ll: [55.712253, 37.554637], hours: "10:00–00:00", rating: 4.6 },
   { n: 63, name: "Smash Point", addr: "ул. Большая Бронная, 25с3", ll: [55.763688, 37.601949], hours: "круглосуточно", rating: 4.4 },
   { n: 64, name: "Marcelo Miracles Shop & Bar", addr: "Кривоколенный пер., 10с6", ll: [55.761412, 37.636452], hours: null, rating: null },
-  { n: 65, name: "Чаван Пицца", addr: "Мосфильмовская ул., 88к4с1", ll: [55.7100, 37.4870], hours: null, rating: 5.0 },
+  { n: 65, name: "Чаван Пицца", addr: "Мосфильмовская ул., 88к4с1", ll: [55.703185, 37.491548], hours: null, rating: 5.0 },
   { n: 66, name: "Манч", addr: "Мичуринский пр-т, 21", ll: [55.699849, 37.504683], hours: "до 02:00", rating: 5.0 },
-  { n: 67, name: "Eat Arena (Emika’s)", addr: "Мичуринский пр-т, 13Ас1", ll: [55.6995, 37.5055], hours: "до 22:00", rating: 5.0 },
+  { n: 67, name: "Eat Arena (Emika’s)", addr: "Мичуринский пр-т, 13Ас1", ll: [55.699051, 37.512694], hours: "до 22:00", rating: 5.0 },
   { n: 68, name: "Ritmo", addr: "ул. Малая Никитская, 29", ll: [55.758983, 37.587319], hours: null, rating: null },
   { n: 69, name: "Ø36 Kebab", addr: "Большой Трёхсвятительский пер., 2/1с8", ll: [55.754913, 37.642960], hours: null, rating: null },
   { n: 70, name: "Бардак (Пятницкая)", addr: "Пятницкая ул., 9/28с1", ll: [55.744484, 37.627853], hours: null, rating: 4.6, tag: "warn" },
@@ -165,138 +319,351 @@ const PLACES = [
   { n: 73, name: "Namur Cafe", addr: "Ленинский пр-т, 87", ll: [55.679092, 37.533424], hours: null, rating: 4.6, approx: true },
 ];
 
-const TAGS = { sea: "морепрод", warn: "не всё халяль" };
-const COLORS = { sea: "#1f6fd1", warn: "#d9822b" };
-const GEO_CACHE = "halal-spots:geo:v1:";
-
+const TAGS = { sea: "морепродукты", warn: "не всё халяль" };
+const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const strip = s => s.replace(/\s*\(.*\)$/, "");
 
-function stars(r) {
-  if (r == null) return '<span class="rating">нет оценки</span>';
-  const pct = Math.max(0, Math.min(100, r / 5 * 100));
-  return `<span class="stars" title="${r}"><i style="width:${pct}%"></i></span> <span class="rating">${r.toFixed(1)}</span>`;
+// ---------- Часы работы по Москве ----------
+function moscowMinutes() {
+  const parts = new Intl.DateTimeFormat("ru-RU", { timeZone: "Europe/Moscow", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const get = t => Number(parts.find(p => p.type === t).value);
+  return get("hour") * 60 + get("minute");
+}
+// true / false, или null — если часы неизвестны полностью
+function isOpen(hours, now = moscowMinutes()) {
+  if (!hours) return null;
+  if (/круглосуточно/i.test(hours)) return true;
+  const m = hours.match(/^(\d\d):(\d\d)–(\d\d):(\d\d)$/);
+  if (!m) return null;
+  const from = +m[1] * 60 + +m[2];
+  let to = +m[3] * 60 + +m[4];
+  if (to <= from) to += 24 * 60;
+  return (now >= from && now < to) || (now + 24 * 60 >= from && now + 24 * 60 < to);
 }
 
-function tag(p) {
-  return p.tag ? `<span class="tag ${p.tag}">${TAGS[p.tag]}</span>` : "";
-}
+// ---------- Расстояния ----------
+let me = null;
+const distKm = ll => Math.hypot((ll[0] - me[0]) * 111.2, (ll[1] - me[1]) * 62.9);
+const fmtDist = d => d < 1 ? `${Math.round(d * 1000 / 10) * 10} м` : `${d.toFixed(d < 10 ? 1 : 0)} км`;
 
-function query(p) {
-  return encodeURIComponent(p.addr ? `${p.name.replace(/\s*\(.*\)$/, "")} ${p.addr.replace(/\s*\(.*\)$/, "")}` : `${p.name} Москва`);
-}
-
-function popup(p) {
-  const q = query(p);
-  return `<div class="pop"><div class="pop-name">${esc(p.name)}${tag(p)}</div>
-    <div>${esc(p.addr)}</div>
-    <div>🕒 ${p.hours ? esc(p.hours) : "часы уточнить"}</div>
-    <div>${stars(p.rating)}</div>
-    ${p.approx ? '<div class="note">Адрес примерный — сверь на картах</div>' : ""}
-    <div class="pop-links">
-      <a href="https://yandex.ru/maps/213/moscow/?text=${q}" target="_blank" rel="noopener">Яндекс Карты</a>
-      <a href="https://2gis.ru/moscow/search/${q}" target="_blank" rel="noopener">2ГИС</a>
-    </div></div>`;
-}
-
-function cacheGet(k) {
-  try { return JSON.parse(localStorage.getItem(GEO_CACHE + k)); } catch { return null; }
-}
-function cacheSet(k, v) {
-  try { localStorage.setItem(GEO_CACHE + k, JSON.stringify(v)); } catch {}
-}
-
-// Геокодер иногда находит одноимённую улицу в другом месте — такие ответы отбрасываем.
-function nearby(a, b) {
-  return Math.hypot((a[0] - b[0]) * 111, (a[1] - b[1]) * 63) < 8;
-}
-
-// Несколько мест в одном доме раздвигаем, чтобы метки не накрывали друг друга.
-const taken = new Map();
-
-async function refine(p, mark) {
-  if (p.geo === false) return;
-  const q = p.geo || "Москва, " + p.addr.replace(/\s*\(.*\)$/, "");
-  let ll = cacheGet(q);
-  if (ll === null) {
-    try {
-      const obj = (await ymaps.geocode(q, { results: 1 })).geoObjects.get(0);
-      const found = obj && obj.geometry.getCoordinates();
-      ll = found && nearby(found, p.ll) ? found : false;
-      cacheSet(q, ll);
-    } catch { return; }
-  }
-  if (!ll) return;
-  const key = ll.join();
-  const dup = taken.get(key) || 0;
-  taken.set(key, dup + 1);
-  mark.geometry.setCoordinates([ll[0], ll[1] + dup * 0.0002]);
-}
-
-let map;
-const marks = new Map();
-
-ymaps.ready(async () => {
-  map = new ymaps.Map("map", {
-    center: [55.745, 37.58],
-    zoom: 11,
-    controls: ["zoomControl", "geolocationControl"],
-  }, { suppressMapOpenBlock: true });
-
+// Несколько мест в одном доме слегка раздвигаем, чтобы метки не накрывали друг друга.
+{
+  const seen = new Map();
   for (const p of PLACES) {
     if (!p.ll) continue;
-    const mark = new ymaps.Placemark(p.ll, {
-      balloonContent: popup(p),
-      hintContent: p.name,
-    }, {
-      preset: "islands#circleDotIcon",
-      iconColor: COLORS[p.tag] || "#0a7d5a",
-      opacity: p.approx ? 0.6 : 1,
-    });
-    map.geoObjects.add(mark);
-    marks.set(p.n, mark);
-  }
-  for (const p of PLACES) {
-    if (marks.has(p.n)) await refine(p, marks.get(p.n));
-  }
-});
-
-const list = document.getElementById("list");
-const panel = document.getElementById("panel");
-document.getElementById("count").textContent = `· ${PLACES.length} мест`;
-
-function render(filter) {
-  const f = filter.trim().toLowerCase();
-  list.innerHTML = "";
-  for (const p of PLACES) {
-    if (f && !`${p.name} ${p.addr || ""}`.toLowerCase().includes(f)) continue;
-    const li = document.createElement("li");
-    if (!p.ll) li.className = "missing";
-    li.innerHTML = `<div class="row">
-        <div><span class="num">${p.n}.</span><span class="name">${esc(p.name)}</span>${tag(p)}</div>
-        <div>${p.ll ? stars(p.rating) : ""}</div>
-      </div>
-      <div class="meta">${p.ll
-        ? `${esc(p.addr)}${p.hours ? " · " + esc(p.hours) : ""}`
-        : `не нашёл на картах · <a href="https://yandex.ru/maps/213/moscow/?text=${query(p)}" target="_blank" rel="noopener">искать</a>`}</div>`;
-    if (p.ll) {
-      li.addEventListener("click", () => {
-        const mark = marks.get(p.n);
-        if (!mark) return;
-        map.setCenter(mark.geometry.getCoordinates(), 16, { duration: 300 })
-          .then(() => mark.balloon.open());
-        if (window.matchMedia("(max-width: 720px)").matches) panel.classList.add("collapsed");
-      });
-    }
-    list.appendChild(li);
+    const k = p.ll.join();
+    const i = seen.get(k) || 0;
+    seen.set(k, i + 1);
+    if (i) p.ll = [p.ll[0], p.ll[1] + i * 0.00018];
   }
 }
 
-document.getElementById("q").addEventListener("input", e => {
-  render(e.target.value);
-  panel.classList.remove("collapsed");
+function stars(r) {
+  return `<span class="stars"><i style="width:${r / 5 * 100}%"></i></span>`;
+}
+function statusText(p) {
+  const o = isOpen(p.hours);
+  if (o === true) return `<span class="st-open">Открыто</span>`;
+  if (o === false) return `<span class="st-closed">Закрыто</span>`;
+  return "";
+}
+const yaSearch = p => `https://yandex.ru/maps/213/moscow/?text=${encodeURIComponent(p.addr ? `${strip(p.name)} ${strip(p.addr)}` : `${p.name} Москва`)}`;
+
+// ---------- Фильтры и список ----------
+const filters = new Set();
+let selected = null;
+
+function matches(p) {
+  const q = $("#q").value.trim().toLowerCase();
+  if (q && !`${p.name} ${p.addr || ""}`.toLowerCase().includes(q)) return false;
+  if (filters.has("open") && isOpen(p.hours) !== true) return false;
+  if (filters.has("top") && !(p.rating >= 4.8)) return false;
+  if (filters.has("halal") && p.tag === "warn") return false;
+  if (filters.has("sea") && p.tag !== "sea") return false;
+  return true;
+}
+
+function visible() {
+  let list = PLACES.filter(matches);
+  if (me && filters.has("near")) list = list.filter(p => p.ll).sort((a, b) => distKm(a.ll) - distKm(b.ll));
+  else list.sort((a, b) => (!a.ll - !b.ll) || a.n - b.n);
+  return list;
+}
+
+function render() {
+  const items = visible();
+  const ul = $("#list");
+  ul.innerHTML = "";
+  const onMap = items.filter(p => p.ll).length;
+  $("#count").textContent = `${onMap} ${plural(onMap, "место", "места", "мест")}`;
+  $("#sort").textContent = me && filters.has("near") ? "ближайшие сверху" : "";
+  if (!items.length) ul.innerHTML = `<li class="empty">Ничего не нашлось</li>`;
+  for (const p of items) {
+    const li = document.createElement("li");
+    if (!p.ll) li.className = "missing";
+    if (selected === p) li.classList.add("sel");
+    const sub = p.ll
+      ? [statusText(p), p.hours && esc(p.hours), me && fmtDist(distKm(p.ll)), !me || !filters.has("near") ? esc(strip(p.addr)) : ""].filter(Boolean).join(" · ")
+      : `не нашёл на картах · <a href="${yaSearch(p)}" target="_blank" rel="noopener">искать</a>`;
+    li.innerHTML = `<span class="dot ${p.ll ? p.tag || "" : "none"}"></span>
+      <div class="li-main"><div class="li-name">${esc(p.name)}</div><div class="li-sub">${sub}</div></div>
+      ${p.rating ? `<div class="li-rate"><span class="s">★</span> ${p.rating.toFixed(1)}</div>` : ""}`;
+    if (p.ll) li.addEventListener("click", () => select(p, true));
+    ul.appendChild(li);
+  }
+  updateMarks(items);
+}
+
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+}
+
+// ---------- Карточка ----------
+function showCard(p) {
+  const card = $("#card");
+  const tags = [p.tag && `<span class="tag ${p.tag}">${TAGS[p.tag]}</span>`, p.approx && `<span class="tag approx">адрес примерный</span>`].filter(Boolean).join("");
+  const route = `https://yandex.ru/maps/?rtext=~${p.ll[0]},${p.ll[1]}&rtt=auto`;
+  card.innerHTML = `
+    <div class="c-top"><div class="c-name">${esc(p.name)}</div><button class="c-close" type="button" aria-label="Закрыть">✕</button></div>
+    ${tags ? `<div class="c-tags">${tags}</div>` : ""}
+    <div class="c-rows">
+      <div>${p.rating ? `${stars(p.rating)} <b>${p.rating.toFixed(1)}</b>` : `<span class="m">Нет оценки</span>`}</div>
+      <div>${statusText(p) ? statusText(p) + " · " : ""}${p.hours ? esc(p.hours) : `<span class="m">Часы уточнить</span>`}</div>
+      <div class="m">${esc(p.addr)}${me ? " · " + fmtDist(distKm(p.ll)) : ""}</div>
+    </div>
+    <div class="c-actions">
+      <a class="btn primary" href="${route}" target="_blank" rel="noopener">Маршрут</a>
+      <a class="btn" href="${yaSearch(p)}" target="_blank" rel="noopener">Яндекс</a>
+      <a class="btn" href="https://2gis.ru/moscow/search/${encodeURIComponent(`${strip(p.name)} ${strip(p.addr)}`)}" target="_blank" rel="noopener">2ГИС</a>
+    </div>`;
+  card.querySelector(".c-close").addEventListener("click", () => select(null));
+  card.hidden = false;
+  document.body.classList.add("carded");
+  document.documentElement.style.setProperty("--card-h", card.offsetHeight + "px");
+}
+
+// ---------- Шторка на телефоне ----------
+const sheet = $("#sheet");
+const mobile = () => matchMedia("(max-width: 799px)").matches;
+const snaps = () => [154, Math.round(innerHeight * .5), Math.round(innerHeight * .88)];
+let sheetH = 154;
+function setSheet(h, animate = true) {
+  sheetH = h;
+  sheet.classList.toggle("dragging", !animate);
+  document.documentElement.style.setProperty("--sheet-h", h + "px");
+}
+{
+  let startY = 0, startH = 0, moved = false;
+  const down = e => {
+    if (!mobile() || e.target.closest("input, button")) return;
+    startY = e.clientY; startH = sheetH; moved = false;
+    sheet.setPointerCapture(e.pointerId);
+    sheet.addEventListener("pointermove", move);
+    sheet.addEventListener("pointerup", up, { once: true });
+  };
+  const move = e => {
+    const dy = startY - e.clientY;
+    if (Math.abs(dy) > 4) moved = true;
+    const [lo, , hi] = snaps();
+    setSheet(Math.max(lo - 40, Math.min(hi + 20, startH + dy)), false);
+  };
+  const up = e => {
+    sheet.removeEventListener("pointermove", move);
+    const s = snaps();
+    if (!moved) { setSheet(s[(s.indexOf(startH) + 1) % 3] ?? s[1]); return; }
+    const v = startY - e.clientY;
+    const target = v > 60 ? s.find(x => x > startH) ?? s[2] : v < -60 ? [...s].reverse().find(x => x < startH) ?? s[0] : s.reduce((a, b) => Math.abs(b - sheetH) < Math.abs(a - sheetH) ? b : a);
+    setSheet(target);
+  };
+  $("#handle").addEventListener("pointerdown", down);
+  sheet.querySelector(".summary").addEventListener("pointerdown", down);
+}
+
+// ---------- События интерфейса ----------
+$("#q").addEventListener("input", () => {
+  $("#clear").style.display = $("#q").value ? "block" : "none";
+  render();
 });
-document.getElementById("toggle").addEventListener("click", () => panel.classList.toggle("collapsed"));
-render("");
+$("#q").addEventListener("focus", () => { if (mobile()) { select(null); setSheet(snaps()[2]); } });
+$("#clear").addEventListener("click", e => { e.preventDefault(); $("#q").value = ""; $("#clear").style.display = "none"; render(); });
+for (const chip of document.querySelectorAll(".chip")) {
+  chip.addEventListener("click", async () => {
+    const f = chip.dataset.f;
+    if (filters.has(f)) filters.delete(f); else filters.add(f);
+    chip.classList.toggle("on", filters.has(f));
+    if (f === "near" && filters.has("near") && !me) await locate();
+    render();
+  });
+}
+
+// ---------- Геолокация ----------
+function locate() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve();
+    navigator.geolocation.getCurrentPosition(pos => {
+      me = [pos.coords.latitude, pos.coords.longitude];
+      $("#locate").classList.add("on");
+      if (window.map) {
+        showMe();
+        map.setCenter(me, 14, { duration: 300 });
+      }
+      render();
+      resolve();
+    }, () => { alert("Не удалось определить местоположение. Разреши доступ к геолокации в браузере."); resolve(); },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  });
+}
+$("#locate").addEventListener("click", locate);
+
+// ---------- Карта ----------
+let map, clusterer, meMark;
+const marks = new Map();
+
+function updateMarks(items) {
+  if (!clusterer) return;
+  const ids = new Set(items.map(p => p.n));
+  clusterer.removeAll();
+  clusterer.add([...marks].filter(([n]) => ids.has(n)).map(([, m]) => m));
+}
+
+function pinClass(p) {
+  return ["pin", p.tag, p.approx && "approx", selected === p && "sel"].filter(Boolean).join(" ");
+}
+
+function select(p, fly) {
+  const prev = selected;
+  selected = p;
+  if (prev && marks.has(prev.n)) marks.get(prev.n).properties.set("cls", pinClass(prev));
+  if (!p) {
+    $("#card").hidden = true;
+    document.body.classList.remove("carded");
+    render();
+    return;
+  }
+  marks.get(p.n).properties.set("cls", pinClass(p));
+  showCard(p);
+  render();
+  if (fly && map) {
+    // центрируем метку в видимой части карты: выше карточки на телефоне, правее панели на компьютере
+    const zoom = Math.max(map.getZoom(), 16);
+    const dx = mobile() ? 0 : -(380 + 32) / 2;
+    const dy = mobile() ? ($("#card").offsetHeight + 16) / 2 : 0;
+    const proj = map.options.get("projection");
+    const px = proj.toGlobalPixels(p.ll, zoom);
+    map.setCenter(proj.fromGlobalPixels([px[0] + dx, px[1] + dy], zoom), zoom, { duration: 350 });
+  }
+}
+
+function showMe() {
+  if (meMark) { meMark.geometry.setCoordinates(me); return; }
+  meMark = new ymaps.Placemark(me, {}, {
+    iconLayout: ymaps.templateLayoutFactory.createClass('<div class="me"></div>'),
+    iconShape: { type: "Circle", coordinates: [0, 0], radius: 10 },
+    zIndex: 1000,
+  });
+  map.geoObjects.add(meMark);
+}
+
+if (window.ymaps) ymaps.ready(() => {
+  map = window.map = new ymaps.Map("map", { center: [55.751, 37.61], zoom: 11, controls: [] }, {
+    suppressMapOpenBlock: true,
+    yandexMapDisablePoiInteractivity: true,
+  });
+  const PinLayout = ymaps.templateLayoutFactory.createClass('<div class="{{ properties.cls }}"></div>');
+  clusterer = new ymaps.Clusterer({
+    clusterIconLayout: ymaps.templateLayoutFactory.createClass('<div class="cluster">{{ properties.geoObjects.length }}</div>'),
+    clusterIconShape: { type: "Circle", coordinates: [0, 0], radius: 22 },
+    gridSize: 72,
+    groupByCoordinates: false,
+    clusterDisableClickZoom: false,
+    hasBalloon: false,
+    hasHint: false,
+  });
+  for (const p of PLACES) {
+    if (!p.ll) continue;
+    const m = new ymaps.Placemark(p.ll, { cls: pinClass(p), hintContent: p.name }, {
+      iconLayout: PinLayout,
+      iconShape: { type: "Circle", coordinates: [0, 0], radius: 14 },
+      hasBalloon: false,
+    });
+    m.events.add("click", () => select(p, true));
+    marks.set(p.n, m);
+  }
+  map.geoObjects.add(clusterer);
+  map.events.add("click", () => select(null));
+  $("#zin").addEventListener("click", () => map.setZoom(map.getZoom() + 1, { duration: 200 }));
+  $("#zout").addEventListener("click", () => map.setZoom(map.getZoom() - 1, { duration: 200 }));
+  if (me) showMe();
+  render();
+});
+
+render();
+
+// ---------- Преломление стекла (Chrome/Edge/Android) ----------
+// Карта смещения по форме скруглённого прямоугольника; идея и SDF — shuding/liquid-glass (MIT, © 2025 Shu Ding).
+// Safari и Firefox не умеют SVG-фильтры в backdrop-filter — там остаётся обычное размытое стекло.
+(function liquidGlass() {
+  const ua = navigator.userAgent;
+  if (!/Chrome\//.test(ua) || /iPhone|iPad|Firefox/.test(ua)) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("width", "0"); svg.setAttribute("height", "0");
+  svg.style.position = "absolute";
+  document.body.appendChild(svg);
+
+  const smooth = (a, b, t) => { t = Math.max(0, Math.min(1, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const sdf = (x, y, hw, hh, r) => {
+    const qx = Math.abs(x) - hw + r, qy = Math.abs(y) - hh + r;
+    return Math.min(Math.max(qx, qy), 0) + Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) - r;
+  };
+
+  let uid = 0;
+  function apply(el) {
+    const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
+    if (!w || !h) return;
+    const r = Math.min(parseFloat(getComputedStyle(el).borderRadius) || 0, h / 2, w / 2);
+    const bevel = Math.min(14, h / 2.5);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const img = canvas.getContext("2d").createImageData(w, h);
+    const raw = new Float32Array(w * h * 2);
+    let max = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const px = x - w / 2, py = y - h / 2;
+      const inside = -sdf(px, py, w / 2, h / 2, r);
+      // у кромки «линза» тянет изображение к центру, в середине — без искажений
+      const k = 1 - smooth(0, bevel, inside);
+      const dx = -px * k * .22, dy = -py * k * .22;
+      const i = (y * w + x) * 2;
+      raw[i] = dx; raw[i + 1] = dy;
+      max = Math.max(max, Math.abs(dx), Math.abs(dy));
+    }
+    const scale = Math.max(max * 2, 1);
+    for (let i = 0, j = 0; i < img.data.length; i += 4, j += 2) {
+      img.data[i] = (raw[j] / scale + .5) * 255;
+      img.data[i + 1] = (raw[j + 1] / scale + .5) * 255;
+      img.data[i + 3] = 255;
+    }
+    canvas.getContext("2d").putImageData(img, 0, 0);
+    const id = el.dataset.lg || (el.dataset.lg = "lg" + uid++);
+    svg.querySelector("#" + id)?.remove();
+    const f = document.createElementNS(NS, "filter");
+    f.id = id;
+    f.setAttribute("filterUnits", "userSpaceOnUse");
+    f.setAttribute("color-interpolation-filters", "sRGB");
+    for (const [k, v] of [["x", 0], ["y", 0], ["width", w], ["height", h]]) f.setAttribute(k, v);
+    f.innerHTML = `<feImage href="${canvas.toDataURL()}" x="0" y="0" width="${w}" height="${h}" result="map"/>
+      <feDisplacementMap in="SourceGraphic" in2="map" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/>`;
+    svg.appendChild(f);
+    const bf = `url(#${id}) blur(3px) saturate(180%) brightness(1.05)`;
+    el.style.backdropFilter = bf;
+  }
+
+  const ro = new ResizeObserver(entries => entries.forEach(e => apply(e.target)));
+  document.querySelectorAll(".lens").forEach(el => ro.observe(el));
+})();
 </script>
 </body>
 </html>
